@@ -1,5 +1,14 @@
+import { randomUUID } from 'crypto';
+
 import { Length } from 'class-validator';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+
+import {
+  BeforeInsert,
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 import { RetroItem } from '../../retro-item/entities/retro-item.entity';
 
@@ -8,9 +17,13 @@ export class Room {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column('varchar', { nullable: false, length: 100 })
-  @Length(1, 100)
-  name: string;
+  @Column('varchar', { unique: true, nullable: false, length: 36 })
+  key: string;
+
+  @BeforeInsert()
+  private generateKey() {
+    this.key = randomUUID();
+  }
 
   @Column('varchar', { nullable: true, length: 200 })
   @Length(1, 200)
