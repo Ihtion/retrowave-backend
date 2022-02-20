@@ -3,8 +3,8 @@ import { PassportModule } from '@nestjs/passport';
 
 import { AuthService } from './auth.service';
 import { UserModule } from '../user/user.module';
-import { LocalStrategy } from './local.strategy';
 import { AuthController } from './auth.controller';
+import { LocalStrategy } from './strategies/local.strategy';
 
 @Module({
   imports: [UserModule, PassportModule],
