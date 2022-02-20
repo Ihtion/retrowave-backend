@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { useContainer } from 'class-validator';
 import { ValidationPipe } from '@nestjs/common';
 
 import {
@@ -15,6 +16,8 @@ async function bootstrap() {
   );
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
+  useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
   await app.listen(3000);
 }

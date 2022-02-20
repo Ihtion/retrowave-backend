@@ -1,11 +1,11 @@
 import { Room } from './entities/room.entity';
 
-export interface SerializedRoom {
+export type SerializedRoom = {
   id: number;
   key: string;
   description: string | null;
   password: string | null;
-}
+};
 
 export class RoomSerializer {
   public static serialize(roomEntity: Room): SerializedRoom {

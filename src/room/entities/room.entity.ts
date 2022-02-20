@@ -1,16 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import { Length } from 'class-validator';
-
-import {
-  BeforeInsert,
-  Column,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-
-import { RetroItem } from '../../retro-item/entities/retro-item.entity';
+import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('Room', {})
 export class Room {
@@ -31,7 +22,4 @@ export class Room {
 
   @Column('text', { nullable: true })
   password: string;
-
-  @OneToMany(() => RetroItem, (retroItem) => retroItem.room)
-  retroItems: RetroItem[];
 }

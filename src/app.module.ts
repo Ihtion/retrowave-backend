@@ -1,14 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AppService } from './app.service';
 import { RoomModule } from './room/room.module';
-import { AppController } from './app.controller';
-import { RetroItemModule } from './retro-item/retro-item.module';
+import { UserModule } from './user/user.module';
+import { UniqueValidator } from './utils/unique-validator';
 
 @Module({
-  imports: [RoomModule, RetroItemModule, TypeOrmModule.forRoot()],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [RoomModule, UserModule, TypeOrmModule.forRoot()],
+  controllers: [],
+  providers: [UniqueValidator],
 })
 export class AppModule {}

@@ -1,6 +1,6 @@
-import { Repository } from 'typeorm';
+import { Connection, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectConnection, InjectRepository } from '@nestjs/typeorm';
 
 import { Room } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -12,6 +12,7 @@ export class RoomService {
   constructor(
     @InjectRepository(Room)
     private readonly _roomsRepository: Repository<Room>,
+    @InjectConnection() private readonly _connection: Connection,
   ) {}
 
   async create(createRoomDto: CreateRoomDto): Promise<SerializedRoom> {
@@ -23,6 +24,8 @@ export class RoomService {
   }
 
   async findAll(): Promise<SerializedRoom[]> {
+    console.log({ connection: this._connection });
+
     const rooms = await this._roomsRepository.find();
 
     return RoomSerializer.serializeMany(rooms);
