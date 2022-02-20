@@ -28,8 +28,10 @@ export class UserService {
     return UserSerializer.serializeMany(users);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(username: string): Promise<SerializedUser> {
+    const user = await this._usersRepository.findOne({ where: { username } });
+
+    return UserSerializer.serialize(user);
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
