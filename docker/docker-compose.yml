@@ -5,7 +5,7 @@ services:
     image: mariadb:latest
     restart: unless-stopped
     environment:
-      - MARIADB_DATABASE=retrowave
-      - MARIADB_ROOT_PASSWORD=root
+      - MARIADB_DATABASE=${DB_DATABASE}
+      - MARIADB_ROOT_PASSWORD=${DB_PASSWORD}
     ports:
-      - "3306:3306"
+      - '3306:3306'
