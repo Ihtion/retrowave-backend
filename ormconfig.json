@@ -1,8 +1,12 @@
 {
-  "type": "sqlite",
-  "database": "./sqlite.db",
-  "entities": ["dist/**/*.entity{.ts,.js}"],
+  "type": "mariadb",
+  "host": "localhost",
+  "port": 3306,
+  "username": "root",
+  "password": "root",
+  "database": "retrowave",
   "synchronize": true,
+  "entities": ["dist/**/*.entity{.ts,.js}"],
   "migrations": ["migration/*.js"],
   "cli": {
     "migrationsDir": "migrations"

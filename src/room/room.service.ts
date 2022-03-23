@@ -24,8 +24,6 @@ export class RoomService {
   }
 
   async findAll(): Promise<SerializedRoom[]> {
-    console.log({ connection: this._connection });
-
     const rooms = await this._roomsRepository.find();
 
     return RoomSerializer.serializeMany(rooms);
