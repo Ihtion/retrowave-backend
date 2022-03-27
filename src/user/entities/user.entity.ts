@@ -13,4 +13,7 @@ export class User {
 
   @Column('varchar', { nullable: true, length: 30 })
   nickname: string;
+
+  @Column('boolean', { default: false })
+  isAdmin: boolean;
 }
