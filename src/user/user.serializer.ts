@@ -1,9 +1,11 @@
 import { User } from './entities/user.entity';
+import { Role } from '../roles/role.enum';
 
 export type SerializedUser = {
   id: number;
   username: string;
   nickname: string | null;
+  roles: Role[];
 };
 
 export class UserSerializer {
@@ -12,6 +14,7 @@ export class UserSerializer {
       id: userEntity.id,
       username: userEntity.username,
       nickname: userEntity.nickname,
+      roles: userEntity.roles,
     };
   }
 
