@@ -7,6 +7,8 @@ import {
   Param,
   Delete,
   UseGuards,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 
 import { UserService } from './user.service';
@@ -17,6 +19,7 @@ import { Role } from '../roles/role.enum';
 import { Roles } from '../roles/role.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { IRequest } from '../interfaces/common.interface';
 
 @Controller('user')
 export class UserController {
@@ -27,6 +30,22 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  update(
+    @Req() request: IRequest,
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    const authUserID = request.user.id;
+
+    if (authUserID !== +id) {
+      return new ForbiddenException();
+    }
+
+    return this.userService.update(+id, updateUserDto);
+  }
+
   @Get()
   @Roles(Role.Admin)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -35,16 +54,15 @@ export class UserController {
   }
 
   @Get(':username')
+  @Roles(Role.Admin)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   findOne(@Param('username') username: string) {
     return this.userService.findOne(username);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
-  }
-
   @Delete(':id')
+  @Roles(Role.Admin)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
   }
