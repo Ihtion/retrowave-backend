@@ -5,8 +5,9 @@
 * `yarn`
 * `docker`
 
-#### **Launch database**
+#### **Launch project using docker-compose**
 ```
+  $ cd docker
   $ docker-compose --env-file ../.env up -d
 ```
 

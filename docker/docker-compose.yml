@@ -2,6 +2,7 @@ version: '3.3'
 
 services:
   db:
+    container_name: retrowave-db
     image: mariadb:latest
     restart: unless-stopped
     environment:
@@ -9,3 +10,15 @@ services:
       - MARIADB_ROOT_PASSWORD=${DB_PASSWORD}
     ports:
       - '3306:3306'
+
+  api:
+    container_name: retrowave-backend
+    image: retrowave-backend:latest
+    restart: unless-stopped
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    environment:
+      - DB_HOST=db
+    ports:
+      - '3000:3000'
