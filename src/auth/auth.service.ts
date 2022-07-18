@@ -16,10 +16,10 @@ export class AuthService {
   ) {}
 
   async validateUser(
-    username: string,
+    email: string,
     password: string,
   ): Promise<SerializedUser | null> {
-    const user = await this._usersRepository.findOne({ where: { username } });
+    const user = await this._usersRepository.findOne({ where: { email } });
 
     if (user?.password === password) {
       return UserSerializer.serialize(user);
@@ -31,7 +31,7 @@ export class AuthService {
   async login(user: SerializedUser): Promise<LoginResponse> {
     const payload: JWTPayload = {
       id: user.id,
-      username: user.username,
+      email: user.email,
       nickname: user.nickname,
       roles: user.roles,
     };

@@ -53,11 +53,11 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Get(':username')
+  @Get(':id')
   @Roles(Role.Admin)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  findOne(@Param('username') username: string) {
-    return this.userService.findOne(username);
+  findOne(@Param('id') id: string) {
+    return this.userService.findOne(id);
   }
 
   @Delete(':id')

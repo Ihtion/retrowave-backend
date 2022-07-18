@@ -28,8 +28,8 @@ export class UserService {
     return UserSerializer.serializeMany(users);
   }
 
-  async findOne(username: string): Promise<SerializedUser> {
-    const user = await this._usersRepository.findOne({ where: { username } });
+  async findOne(id: string): Promise<SerializedUser> {
+    const user = await this._usersRepository.findOne({ where: { id } });
 
     return UserSerializer.serialize(user);
   }

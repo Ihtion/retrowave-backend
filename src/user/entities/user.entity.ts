@@ -1,3 +1,4 @@
+import { IsEmail } from 'class-validator';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Role } from '../../roles/role.enum';
@@ -7,8 +8,9 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column('varchar', { unique: true, nullable: false, length: 20 })
-  username: string;
+  @Column()
+  @IsEmail()
+  email: string;
 
   @Column('text', { nullable: false })
   password: string;

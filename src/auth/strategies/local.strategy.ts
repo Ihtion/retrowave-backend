@@ -8,11 +8,11 @@ import { SerializedUser } from '../../user/user.serializer';
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly _authService: AuthService) {
-    super();
+    super({ usernameField: 'email' });
   }
 
-  async validate(username: string, password: string): Promise<SerializedUser> {
-    const user = await this._authService.validateUser(username, password);
+  async validate(email: string, password: string): Promise<SerializedUser> {
+    const user = await this._authService.validateUser(email, password);
 
     if (user === null) {
       throw new UnauthorizedException();
