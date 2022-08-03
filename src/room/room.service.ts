@@ -5,6 +5,7 @@ import { InjectConnection, InjectRepository } from '@nestjs/typeorm';
 import { Room } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { UserIDType } from '../interfaces/common.interface';
 import { RoomSerializer, SerializedRoom } from './room.serializer';
 
 @Injectable()
@@ -23,8 +24,10 @@ export class RoomService {
     return RoomSerializer.serialize(newRoom);
   }
 
-  async findAll(): Promise<SerializedRoom[]> {
-    const rooms = await this._roomsRepository.find();
+  async findAll(userID: UserIDType): Promise<SerializedRoom[]> {
+    const rooms = await this._roomsRepository.find({
+      where: { id: userID },
+    });
 
     return RoomSerializer.serializeMany(rooms);
   }

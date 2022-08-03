@@ -6,13 +6,17 @@ import {
   Patch,
   Param,
   Delete,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { IRequest } from '../interfaces/common.interface';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('room')
+@Controller('rooms')
 export class RoomController {
   constructor(private readonly _roomService: RoomService) {}
 
@@ -22,8 +26,11 @@ export class RoomController {
   }
 
   @Get()
-  findAll() {
-    return this._roomService.findAll();
+  @UseGuards(JwtAuthGuard)
+  findAll(@Req() request: IRequest) {
+    const { user } = request;
+
+    return this._roomService.findAll(user.id);
   }
 
   @Get(':id')

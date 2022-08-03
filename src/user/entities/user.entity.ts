@@ -1,7 +1,8 @@
 import { IsEmail } from 'class-validator';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Role } from '../../roles/role.enum';
+import { Room } from '../../room/entities/room.entity';
 
 @Entity('User', {})
 export class User {
@@ -20,4 +21,7 @@ export class User {
 
   @Column('set', { enum: Role, default: [Role.User] })
   roles: Role[];
+
+  @OneToMany(() => Room, (room) => room.user)
+  rooms: Room[];
 }

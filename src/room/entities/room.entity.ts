@@ -1,12 +1,24 @@
 import { randomUUID } from 'crypto';
 
 import { Length } from 'class-validator';
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+
+import {
+  BeforeInsert,
+  Column,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+
+import { User } from '../../user/entities/user.entity';
 
 @Entity('Room', {})
 export class Room {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @ManyToOne(() => User, (user) => user.rooms, { nullable: false })
+  user: User;
 
   @Column('varchar', { unique: true, nullable: false, length: 36 })
   key: string;
