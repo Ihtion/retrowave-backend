@@ -1,3 +1,6 @@
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+
 import {
   Controller,
   Get,
@@ -10,27 +13,43 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { User } from '../user/entities/user.entity';
+import { IRequest } from '../interfaces/common.interface';
+
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
-import { IRequest } from '../interfaces/common.interface';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('rooms')
 export class RoomController {
-  constructor(private readonly _roomService: RoomService) {}
+  constructor(
+    private readonly _roomService: RoomService,
+    @InjectRepository(User)
+    private readonly _usersRepository: Repository<User>,
+  ) {}
 
   @Post()
-  create(@Body() createRoomDto: CreateRoomDto) {
-    return this._roomService.create(createRoomDto);
+  async create(@Req() request: IRequest, @Body() createRoomDto: CreateRoomDto) {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this._usersRepository.findOne(userID);
+
+    return this._roomService.create(user, createRoomDto);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  findAll(@Req() request: IRequest) {
-    const { user } = request;
+  async findAll(@Req() request: IRequest) {
+    const {
+      user: { id: userID },
+    } = request;
 
-    return this._roomService.findAll(user.id);
+    const user = await this._usersRepository.findOne(userID);
+
+    return this._roomService.findAll(user);
   }
 
   @Get(':id')
