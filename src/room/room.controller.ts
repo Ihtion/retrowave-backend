@@ -30,6 +30,7 @@ export class RoomController {
   ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(@Req() request: IRequest, @Body() createRoomDto: CreateRoomDto) {
     const {
       user: { id: userID },
@@ -53,16 +54,19 @@ export class RoomController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
     return this._roomService.findOne(+id);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
     return this._roomService.update(+id, updateRoomDto);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string) {
     return this._roomService.remove(+id);
   }
