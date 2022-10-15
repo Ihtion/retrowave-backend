@@ -11,63 +11,94 @@ import {
   Delete,
   Req,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
 
 import { User } from '../user/entities/user.entity';
 import { IRequest } from '../interfaces/common.interface';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-import { RoomService } from './room.service';
+import { Room } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RoomSerializer, SerializedRoom } from './room.serializer';
 
 @Controller('rooms')
 export class RoomController {
   constructor(
-    private readonly _roomService: RoomService,
     @InjectRepository(User)
     private readonly _usersRepository: Repository<User>,
+    @InjectRepository(Room)
+    private readonly _roomsRepository: Repository<Room>,
   ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@Req() request: IRequest, @Body() createRoomDto: CreateRoomDto) {
+  async create(
+    @Req() request: IRequest,
+    @Body() createRoomDto: CreateRoomDto,
+  ): Promise<SerializedRoom> {
     const {
       user: { id: userID },
     } = request;
 
     const user = await this._usersRepository.findOne(userID);
 
-    return this._roomService.create(user, createRoomDto);
+    const newRoom = await this._roomsRepository.save(
+      this._roomsRepository.create({ ...createRoomDto, user }),
+    );
+
+    return RoomSerializer.serialize(newRoom);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async findAll(@Req() request: IRequest) {
+  async findAll(@Req() request: IRequest): Promise<SerializedRoom[]> {
     const {
       user: { id: userID },
     } = request;
 
     const user = await this._usersRepository.findOne(userID);
 
-    return this._roomService.findAll(user);
+    const rooms = await this._roomsRepository.find({
+      where: { user },
+    });
+
+    return RoomSerializer.serializeMany(rooms);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string) {
-    return this._roomService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    const room = await this._roomsRepository.findOne(id);
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    return RoomSerializer.serialize(room);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
-    return this._roomService.update(+id, updateRoomDto);
+    return `This action updates a #${id} room`;
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string) {
-    return this._roomService.remove(+id);
+    return `This action removes a #${id} room`;
+  }
+
+  @Get('/all/:key')
+  async findOneByKey(@Param('key') key: string): Promise<SerializedRoom> {
+    const room = await this._roomsRepository.findOne({ key });
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    return RoomSerializer.serialize(room);
   }
 }
