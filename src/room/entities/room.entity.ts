@@ -7,10 +7,12 @@ import {
   Column,
   Entity,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { User } from '../../user/entities/user.entity';
+import { GroomingSession } from '../../groomingSession/groomingSession.entity';
 
 @Entity('Room', {})
 export class Room {
@@ -34,4 +36,9 @@ export class Room {
 
   @Column('text', { nullable: true })
   password: string;
+
+  @OneToOne(() => GroomingSession, (session) => session.room, {
+    nullable: true,
+  })
+  groomingSession: GroomingSession;
 }
