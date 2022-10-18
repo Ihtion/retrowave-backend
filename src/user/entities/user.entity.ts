@@ -1,5 +1,13 @@
 import { IsEmail } from 'class-validator';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 import { Role } from '../../roles/role.enum';
 import { Room } from '../../room/entities/room.entity';
@@ -24,4 +32,8 @@ export class User {
 
   @OneToMany(() => Room, (room) => room.user)
   rooms: Room[];
+
+  @ManyToMany(() => Room)
+  @JoinTable()
+  savedRooms: Room[];
 }

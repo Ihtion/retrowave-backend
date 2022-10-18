@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import {
@@ -12,6 +12,7 @@ import {
   Req,
   UseGuards,
   NotFoundException,
+  HttpCode,
 } from '@nestjs/common';
 
 import { User } from '../user/entities/user.entity';
@@ -65,6 +66,80 @@ export class RoomController {
     });
 
     return RoomSerializer.serializeMany(rooms);
+  }
+
+  @Get('/all/saved')
+  @UseGuards(JwtAuthGuard)
+  async findAllSaved(@Req() request: IRequest): Promise<SerializedRoom[]> {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this._usersRepository
+      .createQueryBuilder('user')
+      .where('user.id = :id', { id: userID })
+      .leftJoinAndSelect('user.savedRooms', 'room')
+      .getOne();
+
+    if (!user.savedRooms) {
+      return [];
+    }
+
+    const rooms = await this._roomsRepository.find({
+      where: { id: In(user.savedRooms) },
+    });
+
+    return RoomSerializer.serializeMany(rooms);
+  }
+
+  @HttpCode(204)
+  @Post('/all/saved:key')
+  @UseGuards(JwtAuthGuard)
+  async addToSaved(
+    @Req() request: IRequest,
+    @Param('key') key: string,
+  ): Promise<void> {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this._usersRepository.findOne(userID);
+    const room = await this._roomsRepository.findOne({ key });
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    await this._usersRepository
+      .createQueryBuilder()
+      .relation(User, 'savedRooms')
+      .of(user)
+      .add(room);
+  }
+
+  @HttpCode(204)
+  @Delete('/all/saved:key')
+  @UseGuards(JwtAuthGuard)
+  async removeFromSaved(
+    @Req() request: IRequest,
+    @Param('key') key: string,
+  ): Promise<void> {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this._usersRepository.findOne(userID);
+    const room = await this._roomsRepository.findOne({ key });
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    await this._usersRepository
+      .createQueryBuilder()
+      .relation(User, 'savedRooms')
+      .of(user)
+      .remove(room);
   }
 
   @Get(':id')
