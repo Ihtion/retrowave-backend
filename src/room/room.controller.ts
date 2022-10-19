@@ -1,4 +1,4 @@
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import {
@@ -85,11 +85,7 @@ export class RoomController {
       return [];
     }
 
-    const rooms = await this._roomsRepository.find({
-      where: { id: In(user.savedRooms) },
-    });
-
-    return RoomSerializer.serializeMany(rooms);
+    return RoomSerializer.serializeMany(user.savedRooms);
   }
 
   @HttpCode(204)
