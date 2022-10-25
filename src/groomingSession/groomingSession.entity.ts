@@ -28,7 +28,10 @@ export class GroomingSession {
   @Column('json', { nullable: true })
   estimations: GroomingEstimation;
 
-  @OneToOne(() => Room, (room) => room.groomingSession, { nullable: false })
+  @OneToOne(() => Room, (room) => room.groomingSession, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
   room: Room;
 }

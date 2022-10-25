@@ -140,8 +140,13 @@ export class RoomController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async findOne(@Param('id') id: string) {
-    const room = await this._roomsRepository.findOne(id);
+  async findOne(@Req() request: IRequest, @Param('id') id: string) {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this._usersRepository.findOne(userID);
+    const room = await this._roomsRepository.findOne({ id: Number(id), user });
 
     if (room === undefined) {
       throw new NotFoundException();
@@ -152,13 +157,27 @@ export class RoomController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
+  async update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
     return `This action updates a #${id} room`;
   }
 
   @Delete(':id')
+  @HttpCode(204)
   @UseGuards(JwtAuthGuard)
-  remove(@Param('id') id: string) {
+  async remove(@Req() request: IRequest, @Param('id') id: string) {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this._usersRepository.findOne(userID);
+    const room = await this._roomsRepository.findOne({ id: Number(id), user });
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    await this._roomsRepository.remove(room);
+
     return `This action removes a #${id} room`;
   }
 
