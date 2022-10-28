@@ -52,6 +52,34 @@ export class RoomController {
     return RoomSerializer.serialize(newRoom);
   }
 
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  async findOne(@Req() request: IRequest, @Param('id') id: string) {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this._usersRepository.findOne(userID);
+    const room = await this._roomsRepository.findOne({ id: Number(id), user });
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    return RoomSerializer.serialize(room);
+  }
+
+  @Get('/all/:name')
+  async findOneByName(@Param('name') name: string): Promise<SerializedRoom> {
+    const room = await this._roomsRepository.findOne({ name });
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    return RoomSerializer.serialize(room);
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard)
   async findAll(@Req() request: IRequest): Promise<SerializedRoom[]> {
@@ -89,18 +117,18 @@ export class RoomController {
   }
 
   @HttpCode(204)
-  @Post('/all/saved:key')
+  @Post('/all/saved:id')
   @UseGuards(JwtAuthGuard)
   async addToSaved(
     @Req() request: IRequest,
-    @Param('key') key: string,
+    @Param('id') id: string,
   ): Promise<void> {
     const {
       user: { id: userID },
     } = request;
 
     const user = await this._usersRepository.findOne(userID);
-    const room = await this._roomsRepository.findOne({ key });
+    const room = await this._roomsRepository.findOne(id);
 
     if (room === undefined) {
       throw new NotFoundException();
@@ -114,18 +142,18 @@ export class RoomController {
   }
 
   @HttpCode(204)
-  @Delete('/all/saved:key')
+  @Delete('/all/saved:id')
   @UseGuards(JwtAuthGuard)
   async removeFromSaved(
     @Req() request: IRequest,
-    @Param('key') key: string,
+    @Param('id') id: string,
   ): Promise<void> {
     const {
       user: { id: userID },
     } = request;
 
     const user = await this._usersRepository.findOne(userID);
-    const room = await this._roomsRepository.findOne({ key });
+    const room = await this._roomsRepository.findOne(id);
 
     if (room === undefined) {
       throw new NotFoundException();
@@ -138,33 +166,13 @@ export class RoomController {
       .remove(room);
   }
 
-  @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  async findOne(@Req() request: IRequest, @Param('id') id: string) {
-    const {
-      user: { id: userID },
-    } = request;
-
-    const user = await this._usersRepository.findOne(userID);
-    const room = await this._roomsRepository.findOne({ id: Number(id), user });
-
-    if (room === undefined) {
-      throw new NotFoundException();
-    }
-
-    return RoomSerializer.serialize(room);
-  }
-
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  async update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
-    return `This action updates a #${id} room`;
-  }
-
   @Delete(':id')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
-  async remove(@Req() request: IRequest, @Param('id') id: string) {
+  async remove(
+    @Req() request: IRequest,
+    @Param('id') id: string,
+  ): Promise<void> {
     const {
       user: { id: userID },
     } = request;
@@ -177,18 +185,11 @@ export class RoomController {
     }
 
     await this._roomsRepository.remove(room);
-
-    return `This action removes a #${id} room`;
   }
 
-  @Get('/all/:key')
-  async findOneByKey(@Param('key') key: string): Promise<SerializedRoom> {
-    const room = await this._roomsRepository.findOne({ key });
-
-    if (room === undefined) {
-      throw new NotFoundException();
-    }
-
-    return RoomSerializer.serialize(room);
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  async update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
+    return `This action updates a #${id} room`;
   }
 }

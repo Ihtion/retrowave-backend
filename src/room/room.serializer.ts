@@ -2,7 +2,7 @@ import { Room } from './entities/room.entity';
 
 export type SerializedRoom = {
   id: number;
-  key: string;
+  name: string;
   description: string | null;
   password: string | null;
 };
@@ -11,7 +11,7 @@ export class RoomSerializer {
   public static serialize(roomEntity: Room): SerializedRoom {
     return {
       id: roomEntity.id,
-      key: roomEntity.key,
+      name: roomEntity.name,
       description: roomEntity.description,
       password: roomEntity.password,
     };

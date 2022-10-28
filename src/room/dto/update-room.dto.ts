@@ -6,6 +6,10 @@ export class UpdateRoomDto {
   description: string;
 
   @IsOptional()
+  @Length(1, 100)
+  name: string;
+
+  @IsOptional()
   @Length(6, 100)
   password: string;
 }
