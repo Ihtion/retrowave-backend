@@ -13,6 +13,7 @@ import {
   UseGuards,
   NotFoundException,
   HttpCode,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { User } from '../user/entities/user.entity';
@@ -188,8 +189,36 @@ export class RoomController {
   }
 
   @Patch(':id')
+  @HttpCode(204)
   @UseGuards(JwtAuthGuard)
-  async update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
-    return `This action updates a #${id} room`;
+  async update(
+    @Req() request: IRequest,
+    @Param('id') id: string,
+    @Body() updateRoomDto: UpdateRoomDto,
+  ): Promise<void> {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this._usersRepository.findOne(userID);
+    const room = await this._roomsRepository.findOne({ id: Number(id), user });
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    if (updateRoomDto.name) {
+      const roomWithTheSameName = await this._roomsRepository.findOne({
+        where: { name: updateRoomDto.name },
+      });
+
+      if (roomWithTheSameName !== undefined) {
+        throw new BadRequestException(
+          "Room with the same 'name' already exists",
+        );
+      }
+    }
+
+    await this._roomsRepository.update(id, updateRoomDto);
   }
 }
