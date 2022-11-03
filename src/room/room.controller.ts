@@ -117,7 +117,7 @@ export class RoomController {
   }
 
   @HttpCode(204)
-  @Post('/all/saved:id')
+  @Post('/all/saved/:id')
   @UseGuards(JwtAuthGuard)
   async addToSaved(
     @Req() request: IRequest,
@@ -142,7 +142,7 @@ export class RoomController {
   }
 
   @HttpCode(204)
-  @Delete('/all/saved:id')
+  @Delete('/all/saved/:id')
   @UseGuards(JwtAuthGuard)
   async removeFromSaved(
     @Req() request: IRequest,
