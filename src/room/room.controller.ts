@@ -19,6 +19,7 @@ import {
 import { User } from '../user/entities/user.entity';
 import { IRequest } from '../interfaces/common.interface';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { GroomingSession } from '../groomingSession/groomingSession.entity';
 
 import { Room } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -32,6 +33,8 @@ export class RoomController {
     private readonly _usersRepository: Repository<User>,
     @InjectRepository(Room)
     private readonly _roomsRepository: Repository<Room>,
+    @InjectRepository(GroomingSession)
+    private readonly _sessionsRepository: Repository<GroomingSession>,
   ) {}
 
   @Post()
@@ -48,6 +51,13 @@ export class RoomController {
 
     const newRoom = await this._roomsRepository.save(
       this._roomsRepository.create({ ...createRoomDto, user }),
+    );
+
+    await this._sessionsRepository.save(
+      this._sessionsRepository.create({
+        users: {},
+        room: newRoom,
+      }),
     );
 
     return RoomSerializer.serialize(newRoom);

@@ -1,5 +1,6 @@
 import { Socket } from 'socket.io';
 import { Repository } from 'typeorm';
+import { Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import {
@@ -12,7 +13,7 @@ import {
 import { User } from '../user/entities/user.entity';
 import { Room } from '../room/entities/room.entity';
 import { GroomingSession } from '../groomingSession/groomingSession.entity';
-import { GroomingSessionUserMode } from '../interfaces/groomingSession.interface';
+import { GroomingSessionService } from '../groomingSession/groomingSession.service';
 
 import { IncomingWSEvents, JoinRoomPayload } from './wsEvents.interface';
 
@@ -33,6 +34,8 @@ export class EventsGateway {
     private readonly _usersRepository: Repository<User>,
     @InjectRepository(Room)
     private readonly _roomsRepository: Repository<Room>,
+    @Inject(GroomingSessionService)
+    private readonly _groomingSessionService: GroomingSessionService,
   ) {}
 
   @SubscribeMessage(IncomingWSEvents.JOIN_ROOM)
@@ -40,35 +43,18 @@ export class EventsGateway {
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: JoinRoomPayload,
   ): Promise<void> {
-    console.log({ data });
-
     const { userID, roomID } = data;
 
     const user = await this._usersRepository.findOne(userID);
     const room = await this._roomsRepository.findOne(roomID);
+    const session = await this._sessionsRepository.findOne({ room });
 
-    console.log({ user, room });
+    await this._groomingSessionService.joinUser(user, session);
 
-    const newSession = await this._sessionsRepository.save(
-      this._sessionsRepository.create({
-        users: {
-          [userID]: {
-            mode: GroomingSessionUserMode.VOTER,
-            email: user.email,
-          },
-        },
-        room,
-      }),
-    );
+    SocketsMap[session.id] = [...(SocketsMap[roomID] ?? []), socket];
 
-    console.log({ newSession });
-
-    SocketsMap[roomID] = [...(SocketsMap[roomID] ?? []), socket];
-
-    console.log({ SocketsMap });
-
-    SocketsMap[roomID].forEach((socket) =>
-      socket.emit('joinRoom', { userID, roomID }),
+    SocketsMap[session.id].forEach((socket) =>
+      socket.emit('userJoin', { userID, roomID }),
     );
   }
 }
