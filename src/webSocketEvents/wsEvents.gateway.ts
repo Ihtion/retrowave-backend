@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
 } from '@nestjs/websockets';
@@ -26,7 +27,7 @@ const gatewayOptions = {
 };
 
 @WebSocketGateway(gatewayOptions)
-export class EventsGateway {
+export class EventsGateway implements OnGatewayDisconnect {
   constructor(
     @InjectRepository(GroomingSession)
     private readonly _sessionsRepository: Repository<GroomingSession>,
@@ -51,11 +52,31 @@ export class EventsGateway {
     const room = await this._roomsRepository.findOne(roomID);
     const session = await this._sessionsRepository.findOne({ room });
 
-    await this._groomingSessionService.joinUser(user, session);
+    await this._groomingSessionService.join(user, session, socket.id);
 
     const sessionID = session.id;
 
-    this._sessionsManager.addSocket(sessionID, socket);
+    this._sessionsManager.addSocket(
+      socket.id,
+      Number(userID),
+      sessionID,
+      socket,
+    );
+
     this._sessionsManager.emitUserJoinEvent(sessionID, user);
+  }
+
+  async handleDisconnect(@ConnectedSocket() socket: Socket): Promise<void> {
+    const socketData = this._sessionsManager.getSocketData(socket);
+
+    this._sessionsManager.removeSocket(socket);
+
+    if (socketData) {
+      const session = await this._sessionsRepository.findOne(
+        socketData.sessionID,
+      );
+
+      await this._groomingSessionService.leave(session, socket.id);
+    }
   }
 }

@@ -14,11 +14,15 @@ export class GroomingSessionService {
     private readonly _sessionsRepository: Repository<GroomingSession>,
   ) {}
 
-  async joinUser(user: User, session: GroomingSession) {
+  async join(
+    user: User,
+    session: GroomingSession,
+    socketID: string,
+  ): Promise<void> {
     const updatePayload = {
       users: {
         ...session.users,
-        [user.id]: {
+        [socketID]: {
           mode: GroomingSessionUserMode.VOTER,
           email: user.email,
         },
@@ -31,10 +35,10 @@ export class GroomingSessionService {
     });
   }
 
-  async leaveUser(user: User, session: GroomingSession) {
+  async leave(session: GroomingSession, socketID: string) {
     const updatedUsersField = { ...session.users };
 
-    delete updatedUsersField[user.id];
+    delete updatedUsersField[socketID];
 
     await this._sessionsRepository.update(session.id, {
       users: updatedUsersField,
