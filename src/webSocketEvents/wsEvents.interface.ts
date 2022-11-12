@@ -7,4 +7,8 @@ enum IncomingWSEvents {
   JOIN_ROOM = 'joinRoom',
 }
 
-export { JoinRoomPayload, IncomingWSEvents };
+enum OutcomingWSEvents {
+  USER_JOIN = 'userJoin',
+}
+
+export { JoinRoomPayload, IncomingWSEvents, OutcomingWSEvents };

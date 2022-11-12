@@ -13,6 +13,8 @@ import {
 import { User } from '../user/entities/user.entity';
 import { Room } from '../room/entities/room.entity';
 import { GroomingSession } from '../groomingSession/groomingSession.entity';
+import { SessionsManager } from '../groomingSession/sessionsManager.service';
+import { ISessionsManager } from '../groomingSession/groomingSession.interface';
 import { GroomingSessionService } from '../groomingSession/groomingSession.service';
 
 import { IncomingWSEvents, JoinRoomPayload } from './wsEvents.interface';
@@ -22,8 +24,6 @@ const gatewayOptions = {
     origin: '*',
   },
 };
-
-const SocketsMap: Record<string, Socket[]> = {};
 
 @WebSocketGateway(gatewayOptions)
 export class EventsGateway {
@@ -36,6 +36,8 @@ export class EventsGateway {
     private readonly _roomsRepository: Repository<Room>,
     @Inject(GroomingSessionService)
     private readonly _groomingSessionService: GroomingSessionService,
+    @Inject(SessionsManager)
+    private readonly _sessionsManager: ISessionsManager,
   ) {}
 
   @SubscribeMessage(IncomingWSEvents.JOIN_ROOM)
@@ -51,10 +53,9 @@ export class EventsGateway {
 
     await this._groomingSessionService.joinUser(user, session);
 
-    SocketsMap[session.id] = [...(SocketsMap[roomID] ?? []), socket];
+    const sessionID = session.id;
 
-    SocketsMap[session.id].forEach((socket) =>
-      socket.emit('userJoin', { userID, roomID }),
-    );
+    this._sessionsManager.addSocket(sessionID, socket);
+    this._sessionsManager.emitUserJoinEvent(sessionID, user);
   }
 }
