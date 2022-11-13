@@ -13,10 +13,10 @@ import {
 
 import { User } from '../user/entities/user.entity';
 import { Room } from '../room/entities/room.entity';
-import { GroomingSession } from '../groomingSession/groomingSession.entity';
-import { SessionsManager } from '../groomingSession/sessionsManager.service';
-import { ISessionsManager } from '../groomingSession/groomingSession.interface';
-import { GroomingSessionService } from '../groomingSession/groomingSession.service';
+import { GroomingSession } from '../groomingSession/grooming-session.entity';
+import { GroomingSessionManager } from '../groomingSession/grooming-session-manager.service';
+import { IGroomingSessionManager } from '../groomingSession/grooming-session.interface';
+import { GroomingSessionEntityService } from '../groomingSession/grooming-session-entity.service';
 
 import { IncomingWSEvents, JoinRoomPayload } from './wsEvents.interface';
 
@@ -30,15 +30,15 @@ const gatewayOptions = {
 export class EventsGateway implements OnGatewayDisconnect {
   constructor(
     @InjectRepository(GroomingSession)
-    private readonly _sessionsRepository: Repository<GroomingSession>,
+    private readonly groomingSessionRepository: Repository<GroomingSession>,
     @InjectRepository(User)
-    private readonly _usersRepository: Repository<User>,
+    private readonly usersRepository: Repository<User>,
     @InjectRepository(Room)
-    private readonly _roomsRepository: Repository<Room>,
-    @Inject(GroomingSessionService)
-    private readonly _groomingSessionService: GroomingSessionService,
-    @Inject(SessionsManager)
-    private readonly _sessionsManager: ISessionsManager,
+    private readonly roomsRepository: Repository<Room>,
+    @Inject(GroomingSessionEntityService)
+    private readonly groomingSessionEntityService: GroomingSessionEntityService,
+    @Inject(GroomingSessionManager)
+    private readonly groomingSessionManager: IGroomingSessionManager,
   ) {}
 
   @SubscribeMessage(IncomingWSEvents.JOIN_ROOM)
@@ -48,35 +48,51 @@ export class EventsGateway implements OnGatewayDisconnect {
   ): Promise<void> {
     const { userID, roomID } = data;
 
-    const user = await this._usersRepository.findOne(userID);
-    const room = await this._roomsRepository.findOne(roomID);
-    const session = await this._sessionsRepository.findOne({ room });
+    const user = await this.usersRepository.findOne(userID);
+    const room = await this.roomsRepository.findOne(roomID);
+    const groomingSession = await this.groomingSessionRepository.findOne({
+      room,
+    });
 
-    await this._groomingSessionService.join(user, session, socket.id);
-
-    const sessionID = session.id;
-
-    this._sessionsManager.addSocket(
+    await this.groomingSessionEntityService.addConnection(
+      user,
+      groomingSession,
       socket.id,
+    );
+
+    this.groomingSessionManager.addConnection(
       Number(userID),
-      sessionID,
+      groomingSession.id,
       socket,
     );
 
-    this._sessionsManager.emitUserJoinEvent(sessionID, user);
+    this.groomingSessionManager.emitUserJoinEvent(
+      groomingSession.id,
+      socket.id,
+      user,
+    );
   }
 
   async handleDisconnect(@ConnectedSocket() socket: Socket): Promise<void> {
-    const socketData = this._sessionsManager.getSocketData(socket);
+    const connectionData =
+      this.groomingSessionManager.getConnectionData(socket);
 
-    this._sessionsManager.removeSocket(socket);
+    this.groomingSessionManager.removeConnection(socket);
 
-    if (socketData) {
-      const session = await this._sessionsRepository.findOne(
-        socketData.sessionID,
+    if (connectionData) {
+      this.groomingSessionManager.emitUserLeaveEvent(
+        connectionData.sessionID,
+        socket.id,
       );
 
-      await this._groomingSessionService.leave(session, socket.id);
+      const session = await this.groomingSessionRepository.findOne(
+        connectionData.sessionID,
+      );
+
+      await this.groomingSessionEntityService.removeConnection(
+        session,
+        socket.id,
+      );
     }
   }
 }

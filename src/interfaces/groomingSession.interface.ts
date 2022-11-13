@@ -1,5 +1,3 @@
-import { UserIDType } from './common.interface';
-
 enum GroomingSessionUserMode {
   SPECTATOR = 'spectator',
   VOTER = 'voter',

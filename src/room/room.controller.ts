@@ -19,7 +19,7 @@ import {
 import { User } from '../user/entities/user.entity';
 import { IRequest } from '../interfaces/common.interface';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { GroomingSession } from '../groomingSession/groomingSession.entity';
+import { GroomingSession } from '../groomingSession/grooming-session.entity';
 
 import { Room } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';

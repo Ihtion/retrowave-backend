@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 
 import { User } from '../../user/entities/user.entity';
-import { GroomingSession } from '../../groomingSession/groomingSession.entity';
+import { GroomingSession } from '../../groomingSession/grooming-session.entity';
 
 @Entity('Room', {})
 export class Room {

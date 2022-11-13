@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { UserModule } from '../user/user.module';
-import { GroomingSessionModule } from '../groomingSession/groomingSession.module';
+import { GroomingSessionModule } from '../groomingSession/grooming-session.module';
 
 import { Room } from './entities/room.entity';
 import { RoomController } from './room.controller';

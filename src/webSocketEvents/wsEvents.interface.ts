@@ -9,6 +9,7 @@ enum IncomingWSEvents {
 
 enum OutcomingWSEvents {
   USER_JOIN = 'userJoin',
+  USER_LEAVE = 'userLeave',
 }
 
 export { JoinRoomPayload, IncomingWSEvents, OutcomingWSEvents };

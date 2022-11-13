@@ -8,7 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { configuration } from './config/configuration';
 import { UniqueValidator } from './utils/unique-validator';
 import { WSEventsModule } from './webSocketEvents/wsEvents.module';
-import { GroomingSessionModule } from './groomingSession/groomingSession.module';
+import { GroomingSessionModule } from './groomingSession/grooming-session.module';
 
 @Module({
   imports: [
