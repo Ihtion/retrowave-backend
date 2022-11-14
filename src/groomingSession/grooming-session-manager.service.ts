@@ -67,4 +67,22 @@ export class GroomingSessionManager implements IGroomingSessionManager {
       socket.emit(OutcomingWSEvents.USER_LEAVE, { connectionID }),
     );
   }
+
+  emitVotingStartEvent(sessionID: number, connectionID: string): void {
+    const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
+
+    sessionSockets.forEach((socket) =>
+      socket.emit(OutcomingWSEvents.VOTING_START, {
+        votingInitiator: connectionID,
+      }),
+    );
+  }
+
+  emitVotingFinishEvent(sessionID: number): void {
+    const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
+
+    sessionSockets.forEach((socket) =>
+      socket.emit(OutcomingWSEvents.VOTING_FINISH),
+    );
+  }
 }

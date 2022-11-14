@@ -25,6 +25,10 @@ export class GroomingSession {
   @Column('enum', { enum: GroomingState, default: GroomingState.INIT })
   state: GroomingState;
 
+  // Connection (socket) ID
+  @Column('text', { nullable: true })
+  votingInitiator: string;
+
   @Column('json', { nullable: true })
   estimations: GroomingEstimation;
 

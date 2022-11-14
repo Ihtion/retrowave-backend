@@ -20,7 +20,12 @@ export class GroomingSessionEntityService implements OnModuleInit {
   async onModuleInit() {
     await this.sessionsRepository.update(
       {},
-      { users: {}, estimations: {}, state: GroomingState.INIT },
+      {
+        users: {},
+        estimations: {},
+        state: GroomingState.INIT,
+        votingInitiator: null,
+      },
     );
   }
 
@@ -52,6 +57,20 @@ export class GroomingSessionEntityService implements OnModuleInit {
 
     await this.sessionsRepository.update(session.id, {
       users: updatedUsersField,
+    });
+  }
+
+  async startVoting(sessionID: number, connectionID: string): Promise<void> {
+    await this.sessionsRepository.update(sessionID, {
+      votingInitiator: connectionID,
+      state: GroomingState.ACTIVE,
+    });
+  }
+
+  async finishVoting(sessionID: number): Promise<void> {
+    await this.sessionsRepository.update(sessionID, {
+      votingInitiator: null,
+      state: GroomingState.FINISHED,
     });
   }
 }

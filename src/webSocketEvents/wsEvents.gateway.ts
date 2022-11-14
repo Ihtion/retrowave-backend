@@ -13,6 +13,7 @@ import {
 
 import { User } from '../user/entities/user.entity';
 import { Room } from '../room/entities/room.entity';
+import { GroomingState } from '../interfaces/groomingSession.interface';
 import { GroomingSession } from '../groomingSession/grooming-session.entity';
 import { GroomingSessionManager } from '../groomingSession/grooming-session-manager.service';
 import { IGroomingSessionManager } from '../groomingSession/grooming-session.interface';
@@ -92,6 +93,46 @@ export class EventsGateway implements OnGatewayDisconnect {
       await this.groomingSessionEntityService.removeConnection(
         session,
         socket.id,
+      );
+    }
+  }
+
+  @SubscribeMessage(IncomingWSEvents.VOTING_START)
+  async handleVotingStart(@ConnectedSocket() socket: Socket): Promise<void> {
+    const connectionData =
+      this.groomingSessionManager.getConnectionData(socket);
+
+    if (connectionData) {
+      const session = await this.groomingSessionRepository.findOne(
+        connectionData.sessionID,
+      );
+
+      if (session.state !== GroomingState.ACTIVE) {
+        await this.groomingSessionEntityService.startVoting(
+          connectionData.sessionID,
+          socket.id,
+        );
+
+        this.groomingSessionManager.emitVotingStartEvent(
+          connectionData.sessionID,
+          socket.id,
+        );
+      }
+    }
+  }
+
+  @SubscribeMessage(IncomingWSEvents.VOTING_FINISH)
+  async handleVotingFinish(@ConnectedSocket() socket: Socket): Promise<void> {
+    const connectionData =
+      this.groomingSessionManager.getConnectionData(socket);
+
+    if (connectionData) {
+      await this.groomingSessionEntityService.finishVoting(
+        connectionData.sessionID,
+      );
+
+      this.groomingSessionManager.emitVotingFinishEvent(
+        connectionData.sessionID,
       );
     }
   }
