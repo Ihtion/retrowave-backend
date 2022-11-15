@@ -9,11 +9,12 @@ enum IncomingWSEvents {
   VOTING_FINISH = 'votingFinish',
 }
 
-enum OutcomingWSEvents {
+enum OutgoingWSEvents {
   USER_JOIN = 'userJoin',
   USER_LEAVE = 'userLeave',
   VOTING_START = 'votingStart',
   VOTING_FINISH = 'votingFinish',
+  SESSION_DATA = 'sessionData',
 }
 
-export { JoinRoomPayload, IncomingWSEvents, OutcomingWSEvents };
+export { JoinRoomPayload, IncomingWSEvents, OutgoingWSEvents };

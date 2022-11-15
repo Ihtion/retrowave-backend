@@ -2,6 +2,7 @@ import { Socket } from 'socket.io';
 
 import { User } from '../user/entities/user.entity';
 import { UserIDType } from '../interfaces/common.interface';
+import { GroomingSession } from './grooming-session.entity';
 
 export type ConnectionData = {
   userID: UserIDType;
@@ -16,4 +17,5 @@ export interface IGroomingSessionManager {
   emitUserLeaveEvent(sessionID: number, connectionID: string): void;
   emitVotingStartEvent(sessionID: number, connectionID: string): void;
   emitVotingFinishEvent(sessionID: number): void;
+  emitSessionData(session: GroomingSession, socket: Socket): void;
 }

@@ -33,7 +33,7 @@ export class GroomingSessionEntityService implements OnModuleInit {
     user: User,
     session: GroomingSession,
     connectionID: string,
-  ): Promise<void> {
+  ): Promise<GroomingSession> {
     const updatePayload = {
       users: {
         ...session.users,
@@ -44,7 +44,7 @@ export class GroomingSessionEntityService implements OnModuleInit {
       },
     };
 
-    await this.sessionsRepository.update(session.id, {
+    return this.sessionsRepository.save({
       ...session,
       ...updatePayload,
     });

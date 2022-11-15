@@ -55,11 +55,12 @@ export class EventsGateway implements OnGatewayDisconnect {
       room,
     });
 
-    await this.groomingSessionEntityService.addConnection(
-      user,
-      groomingSession,
-      socket.id,
-    );
+    const updatedSession =
+      await this.groomingSessionEntityService.addConnection(
+        user,
+        groomingSession,
+        socket.id,
+      );
 
     this.groomingSessionManager.addConnection(
       Number(userID),
@@ -72,6 +73,8 @@ export class EventsGateway implements OnGatewayDisconnect {
       socket.id,
       user,
     );
+
+    this.groomingSessionManager.emitSessionData(updatedSession, socket);
   }
 
   async handleDisconnect(@ConnectedSocket() socket: Socket): Promise<void> {

@@ -3,12 +3,14 @@ import { Injectable } from '@nestjs/common';
 
 import { User } from '../user/entities/user.entity';
 import { UserIDType } from '../interfaces/common.interface';
-import { OutcomingWSEvents } from '../webSocketEvents/wsEvents.interface';
+import { OutgoingWSEvents } from '../webSocketEvents/wsEvents.interface';
 
 import {
   IGroomingSessionManager,
   ConnectionData,
 } from './grooming-session.interface';
+
+import { GroomingSession } from './grooming-session.entity';
 
 @Injectable()
 export class GroomingSessionManager implements IGroomingSessionManager {
@@ -53,7 +55,7 @@ export class GroomingSessionManager implements IGroomingSessionManager {
     const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
 
     sessionSockets.forEach((socket) =>
-      socket.emit(OutcomingWSEvents.USER_JOIN, {
+      socket.emit(OutgoingWSEvents.USER_JOIN, {
         connectionID,
         userEmail: user.email,
       }),
@@ -64,7 +66,7 @@ export class GroomingSessionManager implements IGroomingSessionManager {
     const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
 
     sessionSockets.forEach((socket) =>
-      socket.emit(OutcomingWSEvents.USER_LEAVE, { connectionID }),
+      socket.emit(OutgoingWSEvents.USER_LEAVE, { connectionID }),
     );
   }
 
@@ -72,7 +74,7 @@ export class GroomingSessionManager implements IGroomingSessionManager {
     const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
 
     sessionSockets.forEach((socket) =>
-      socket.emit(OutcomingWSEvents.VOTING_START, {
+      socket.emit(OutgoingWSEvents.VOTING_START, {
         votingInitiator: connectionID,
       }),
     );
@@ -82,7 +84,24 @@ export class GroomingSessionManager implements IGroomingSessionManager {
     const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
 
     sessionSockets.forEach((socket) =>
-      socket.emit(OutcomingWSEvents.VOTING_FINISH),
+      socket.emit(OutgoingWSEvents.VOTING_FINISH),
     );
+  }
+
+  emitSessionData(session: GroomingSession, socket: Socket): void {
+    const { state, users, votingInitiator, estimations } = session;
+
+    const usersList = Object.entries(users).map(
+      ([connectionID, { email, mode }]) => {
+        return { connectionID, email, mode };
+      },
+    );
+
+    socket.emit(OutgoingWSEvents.SESSION_DATA, {
+      usersList,
+      state,
+      votingInitiator,
+      estimations,
+    });
   }
 }
