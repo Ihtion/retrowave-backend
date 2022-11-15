@@ -7,6 +7,7 @@ enum IncomingWSEvents {
   JOIN_ROOM = 'joinRoom',
   VOTING_START = 'votingStart',
   VOTING_FINISH = 'votingFinish',
+  ESTIMATION = 'estimation',
 }
 
 enum OutgoingWSEvents {
@@ -15,6 +16,7 @@ enum OutgoingWSEvents {
   VOTING_START = 'votingStart',
   VOTING_FINISH = 'votingFinish',
   SESSION_DATA = 'sessionData',
+  ESTIMATION = 'estimation',
 }
 
 export { JoinRoomPayload, IncomingWSEvents, OutgoingWSEvents };

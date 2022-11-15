@@ -16,7 +16,7 @@ type GroomingSessionUserData = {
 
 type GroomingSessionUser = Record<string, GroomingSessionUserData>;
 
-type GroomingEstimation = Record<string, number>;
+type GroomingEstimation = Record<string, number | null>;
 
 export {
   GroomingSessionUser,

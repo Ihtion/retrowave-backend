@@ -55,6 +55,12 @@ export class EventsGateway implements OnGatewayDisconnect {
       room,
     });
 
+    if (groomingSession.users[socket.id]) {
+      this.groomingSessionManager.emitSessionData(groomingSession, socket);
+
+      return;
+    }
+
     const updatedSession =
       await this.groomingSessionEntityService.addConnection(
         user,
@@ -137,6 +143,26 @@ export class EventsGateway implements OnGatewayDisconnect {
       this.groomingSessionManager.emitVotingFinishEvent(
         connectionData.sessionID,
       );
+    }
+  }
+
+  @SubscribeMessage(IncomingWSEvents.ESTIMATION)
+  async handleEstimation(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() estimation: number | null,
+  ): Promise<void> {
+    const connectionData =
+      this.groomingSessionManager.getConnectionData(socket);
+
+    if (connectionData) {
+      const updatedSession =
+        await this.groomingSessionEntityService.setEstimation(
+          connectionData.sessionID,
+          socket.id,
+          estimation,
+        );
+
+      this.groomingSessionManager.emitEstimation(updatedSession);
     }
   }
 }

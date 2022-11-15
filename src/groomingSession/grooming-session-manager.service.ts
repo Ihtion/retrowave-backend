@@ -104,4 +104,14 @@ export class GroomingSessionManager implements IGroomingSessionManager {
       estimations,
     });
   }
+
+  emitEstimation(session: GroomingSession): void {
+    const sessionSockets = this._socketsStorage.get(session.id) ?? [];
+
+    sessionSockets.forEach((socket) =>
+      socket.emit(OutgoingWSEvents.ESTIMATION, {
+        estimations: session.estimations,
+      }),
+    );
+  }
 }

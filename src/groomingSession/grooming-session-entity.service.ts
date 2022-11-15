@@ -73,4 +73,16 @@ export class GroomingSessionEntityService implements OnModuleInit {
       state: GroomingState.FINISHED,
     });
   }
+
+  async setEstimation(
+    sessionID: number,
+    connectionID: string,
+    estimation: number | null,
+  ): Promise<GroomingSession> {
+    const session = await this.sessionsRepository.findOne(sessionID);
+
+    session.estimations[connectionID] = estimation;
+
+    return this.sessionsRepository.save(session);
+  }
 }
