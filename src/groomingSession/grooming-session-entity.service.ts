@@ -52,12 +52,22 @@ export class GroomingSessionEntityService implements OnModuleInit {
 
   async removeConnection(session: GroomingSession, connectionID: string) {
     const updatedUsersField = { ...session.users };
+    const updatedEstimationsField = { ...session.estimations };
 
     delete updatedUsersField[connectionID];
+    delete updatedEstimationsField[connectionID];
 
-    await this.sessionsRepository.update(session.id, {
+    const updatePayload = {
       users: updatedUsersField,
-    });
+      estimations: updatedEstimationsField,
+      state: session.state,
+    };
+
+    if (Object.keys(updatedUsersField).length === 0) {
+      updatePayload.state = GroomingState.INIT;
+    }
+
+    await this.sessionsRepository.update(session.id, updatePayload);
   }
 
   async startVoting(sessionID: number, connectionID: string): Promise<void> {
