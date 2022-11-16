@@ -10,6 +10,14 @@ import {
 
 import { GroomingSession } from './grooming-session.entity';
 
+const EMPTY_SESSION_PAYLOAD = {
+  users: {},
+  estimations: {},
+  state: GroomingState.INIT,
+  votingInitiator: null,
+  votingComment: null,
+};
+
 @Injectable()
 export class GroomingSessionEntityService implements OnModuleInit {
   constructor(
@@ -18,15 +26,7 @@ export class GroomingSessionEntityService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.sessionsRepository.update(
-      {},
-      {
-        users: {},
-        estimations: {},
-        state: GroomingState.INIT,
-        votingInitiator: null,
-      },
-    );
+    await this.sessionsRepository.update({}, EMPTY_SESSION_PAYLOAD);
   }
 
   async addConnection(
@@ -57,23 +57,27 @@ export class GroomingSessionEntityService implements OnModuleInit {
     delete updatedUsersField[connectionID];
     delete updatedEstimationsField[connectionID];
 
-    const updatePayload = {
-      users: updatedUsersField,
-      estimations: updatedEstimationsField,
-      state: session.state,
-    };
-
     if (Object.keys(updatedUsersField).length === 0) {
-      updatePayload.state = GroomingState.INIT;
+      await this.sessionsRepository.update(session.id, EMPTY_SESSION_PAYLOAD);
+
+      return;
     }
 
-    await this.sessionsRepository.update(session.id, updatePayload);
+    await this.sessionsRepository.update(session.id, {
+      users: updatedUsersField,
+      estimations: updatedEstimationsField,
+    });
   }
 
-  async startVoting(sessionID: number, connectionID: string): Promise<void> {
+  async startVoting(
+    sessionID: number,
+    connectionID: string,
+    votingComment: string | null,
+  ): Promise<void> {
     await this.sessionsRepository.update(sessionID, {
       votingInitiator: connectionID,
       state: GroomingState.ACTIVE,
+      votingComment,
     });
   }
 

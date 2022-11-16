@@ -70,12 +70,17 @@ export class GroomingSessionManager implements IGroomingSessionManager {
     );
   }
 
-  emitVotingStartEvent(sessionID: number, connectionID: string): void {
+  emitVotingStartEvent(
+    sessionID: number,
+    connectionID: string,
+    votingComment: string | null,
+  ): void {
     const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
 
     sessionSockets.forEach((socket) =>
       socket.emit(OutgoingWSEvents.VOTING_START, {
         votingInitiator: connectionID,
+        votingComment,
       }),
     );
   }
@@ -89,7 +94,8 @@ export class GroomingSessionManager implements IGroomingSessionManager {
   }
 
   emitSessionData(session: GroomingSession, socket: Socket): void {
-    const { state, users, votingInitiator, estimations } = session;
+    const { state, users, votingInitiator, votingComment, estimations } =
+      session;
 
     const usersList = Object.entries(users).map(
       ([connectionID, { email, mode }]) => {
@@ -101,6 +107,7 @@ export class GroomingSessionManager implements IGroomingSessionManager {
       usersList,
       state,
       votingInitiator,
+      votingComment,
       estimations,
     });
   }

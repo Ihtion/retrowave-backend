@@ -15,7 +15,13 @@ export interface IGroomingSessionManager {
   getConnectionData(socket: Socket): ConnectionData;
   emitUserJoinEvent(sessionID: number, connectionID: string, user: User): void;
   emitUserLeaveEvent(sessionID: number, connectionID: string): void;
-  emitVotingStartEvent(sessionID: number, connectionID: string): void;
+
+  emitVotingStartEvent(
+    sessionID: number,
+    connectionID: string,
+    votingComment: string | null,
+  ): void;
+
   emitVotingFinishEvent(sessionID: number): void;
   emitSessionData(session: GroomingSession, socket: Socket): void;
   emitEstimation(session: GroomingSession): void;

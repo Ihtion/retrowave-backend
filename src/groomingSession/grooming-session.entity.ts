@@ -25,6 +25,9 @@ export class GroomingSession {
   @Column('enum', { enum: GroomingState, default: GroomingState.INIT })
   state: GroomingState;
 
+  @Column('varchar', { nullable: true, length: 100 })
+  votingComment: string;
+
   // Connection (socket) ID
   @Column('text', { nullable: true })
   votingInitiator: string;

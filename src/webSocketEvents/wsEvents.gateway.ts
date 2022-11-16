@@ -107,7 +107,10 @@ export class EventsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage(IncomingWSEvents.VOTING_START)
-  async handleVotingStart(@ConnectedSocket() socket: Socket): Promise<void> {
+  async handleVotingStart(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() votingComment: string,
+  ): Promise<void> {
     const connectionData =
       this.groomingSessionManager.getConnectionData(socket);
 
@@ -120,11 +123,13 @@ export class EventsGateway implements OnGatewayDisconnect {
         await this.groomingSessionEntityService.startVoting(
           connectionData.sessionID,
           socket.id,
+          votingComment ?? null,
         );
 
         this.groomingSessionManager.emitVotingStartEvent(
           connectionData.sessionID,
           socket.id,
+          votingComment ?? null,
         );
       }
     }
