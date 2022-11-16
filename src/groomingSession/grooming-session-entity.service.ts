@@ -78,6 +78,7 @@ export class GroomingSessionEntityService implements OnModuleInit {
       votingInitiator: connectionID,
       state: GroomingState.ACTIVE,
       votingComment,
+      estimations: {},
     });
   }
 

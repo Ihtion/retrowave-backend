@@ -103,6 +103,16 @@ export class EventsGateway implements OnGatewayDisconnect {
         session,
         socket.id,
       );
+
+      if (session.votingInitiator === socket.id) {
+        await this.groomingSessionEntityService.finishVoting(
+          connectionData.sessionID,
+        );
+
+        this.groomingSessionManager.emitVotingFinishEvent(
+          connectionData.sessionID,
+        );
+      }
     }
   }
 
