@@ -30,11 +30,11 @@ import { RoomSerializer, SerializedRoom } from './room.serializer';
 export class RoomController {
   constructor(
     @InjectRepository(User)
-    private readonly _usersRepository: Repository<User>,
+    private readonly usersRepository: Repository<User>,
     @InjectRepository(Room)
-    private readonly _roomsRepository: Repository<Room>,
+    private readonly roomRepository: Repository<Room>,
     @InjectRepository(GroomingSession)
-    private readonly _sessionsRepository: Repository<GroomingSession>,
+    private readonly sessionRepository: Repository<GroomingSession>,
   ) {}
 
   @Post()
@@ -47,14 +47,14 @@ export class RoomController {
       user: { id: userID },
     } = request;
 
-    const user = await this._usersRepository.findOne(userID);
+    const user = await this.usersRepository.findOne(userID);
 
-    const newRoom = await this._roomsRepository.save(
-      this._roomsRepository.create({ ...createRoomDto, user }),
+    const newRoom = await this.roomRepository.save(
+      this.roomRepository.create({ ...createRoomDto, user }),
     );
 
-    await this._sessionsRepository.save(
-      this._sessionsRepository.create({
+    await this.sessionRepository.save(
+      this.sessionRepository.create({
         users: {},
         room: newRoom,
       }),
@@ -63,139 +63,27 @@ export class RoomController {
     return RoomSerializer.serialize(newRoom);
   }
 
-  @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  async findOne(@Req() request: IRequest, @Param('id') id: string) {
-    const {
-      user: { id: userID },
-    } = request;
-
-    const user = await this._usersRepository.findOne(userID);
-    const room = await this._roomsRepository.findOne({ id: Number(id), user });
-
-    if (room === undefined) {
-      throw new NotFoundException();
-    }
-
-    return RoomSerializer.serialize(room);
-  }
-
-  @Get('/all/:name')
-  async findOneByName(@Param('name') name: string): Promise<SerializedRoom> {
-    const room = await this._roomsRepository.findOne({ name });
-
-    if (room === undefined) {
-      throw new NotFoundException();
-    }
-
-    return RoomSerializer.serialize(room);
-  }
-
-  @Get()
-  @UseGuards(JwtAuthGuard)
-  async findAll(@Req() request: IRequest): Promise<SerializedRoom[]> {
-    const {
-      user: { id: userID },
-    } = request;
-
-    const user = await this._usersRepository.findOne(userID);
-
-    const rooms = await this._roomsRepository.find({
-      where: { user },
-    });
-
-    return RoomSerializer.serializeMany(rooms);
-  }
-
-  @Get('/all/saved')
-  @UseGuards(JwtAuthGuard)
-  async findAllSaved(@Req() request: IRequest): Promise<SerializedRoom[]> {
-    const {
-      user: { id: userID },
-    } = request;
-
-    const user = await this._usersRepository
-      .createQueryBuilder('user')
-      .where('user.id = :id', { id: userID })
-      .leftJoinAndSelect('user.savedRooms', 'room')
-      .getOne();
-
-    if (!user.savedRooms) {
-      return [];
-    }
-
-    return RoomSerializer.serializeMany(user.savedRooms);
-  }
-
-  @HttpCode(204)
-  @Post('/all/saved/:id')
-  @UseGuards(JwtAuthGuard)
-  async addToSaved(
-    @Req() request: IRequest,
-    @Param('id') id: string,
-  ): Promise<void> {
-    const {
-      user: { id: userID },
-    } = request;
-
-    const user = await this._usersRepository.findOne(userID);
-    const room = await this._roomsRepository.findOne(id);
-
-    if (room === undefined) {
-      throw new NotFoundException();
-    }
-
-    await this._usersRepository
-      .createQueryBuilder()
-      .relation(User, 'savedRooms')
-      .of(user)
-      .add(room);
-  }
-
-  @HttpCode(204)
-  @Delete('/all/saved/:id')
-  @UseGuards(JwtAuthGuard)
-  async removeFromSaved(
-    @Req() request: IRequest,
-    @Param('id') id: string,
-  ): Promise<void> {
-    const {
-      user: { id: userID },
-    } = request;
-
-    const user = await this._usersRepository.findOne(userID);
-    const room = await this._roomsRepository.findOne(id);
-
-    if (room === undefined) {
-      throw new NotFoundException();
-    }
-
-    await this._usersRepository
-      .createQueryBuilder()
-      .relation(User, 'savedRooms')
-      .of(user)
-      .remove(room);
-  }
-
   @Delete(':id')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   async remove(
     @Req() request: IRequest,
-    @Param('id') id: string,
+    @Param('id') roomID: string,
   ): Promise<void> {
     const {
       user: { id: userID },
     } = request;
 
-    const user = await this._usersRepository.findOne(userID);
-    const room = await this._roomsRepository.findOne({ id: Number(id), user });
+    const room = await this.roomRepository
+      .createQueryBuilder('room')
+      .where('room.id = :roomID AND room.userId = :userID', { userID, roomID })
+      .getOne();
 
     if (room === undefined) {
       throw new NotFoundException();
     }
 
-    await this._roomsRepository.remove(room);
+    await this.roomRepository.remove(room);
   }
 
   @Patch(':id')
@@ -203,22 +91,24 @@ export class RoomController {
   @UseGuards(JwtAuthGuard)
   async update(
     @Req() request: IRequest,
-    @Param('id') id: string,
+    @Param('id') roomID: string,
     @Body() updateRoomDto: UpdateRoomDto,
   ): Promise<void> {
     const {
       user: { id: userID },
     } = request;
 
-    const user = await this._usersRepository.findOne(userID);
-    const room = await this._roomsRepository.findOne({ id: Number(id), user });
+    const room = await this.roomRepository
+      .createQueryBuilder('room')
+      .where('room.id = :roomID AND room.userId = :userID', { userID, roomID })
+      .getOne();
 
     if (room === undefined) {
       throw new NotFoundException();
     }
 
     if (updateRoomDto.name) {
-      const roomWithTheSameName = await this._roomsRepository.findOne({
+      const roomWithTheSameName = await this.roomRepository.findOne({
         where: { name: updateRoomDto.name },
       });
 
@@ -229,6 +119,88 @@ export class RoomController {
       }
     }
 
-    await this._roomsRepository.update(id, updateRoomDto);
+    await this.roomRepository.update(roomID, updateRoomDto);
+  }
+
+  @Get('/all')
+  async findAll(): Promise<SerializedRoom[]> {
+    const rooms = await this.roomRepository.find();
+
+    return RoomSerializer.serializeMany(rooms);
+  }
+
+  @Get('/my')
+  @UseGuards(JwtAuthGuard)
+  async findMy(@Req() request: IRequest): Promise<SerializedRoom[]> {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.id = :id', { id: userID })
+      .leftJoinAndSelect('user.savedRooms', 'room')
+      .getOne();
+
+    const savedRooms = user?.savedRooms ?? [];
+
+    const ownedRooms = await this.roomRepository
+      .createQueryBuilder('room')
+      .where('room.userId = :userId', { userId: userID })
+      .getMany();
+
+    const myRooms = [...ownedRooms, ...savedRooms];
+
+    return RoomSerializer.serializeMany(myRooms);
+  }
+
+  @HttpCode(204)
+  @Post('/my/:id')
+  @UseGuards(JwtAuthGuard)
+  async addToSaved(
+    @Req() request: IRequest,
+    @Param('id') id: string,
+  ): Promise<void> {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this.usersRepository.findOne(userID);
+    const room = await this.roomRepository.findOne(id);
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    await this.usersRepository
+      .createQueryBuilder()
+      .relation(User, 'savedRooms')
+      .of(user)
+      .add(room);
+  }
+
+  @HttpCode(204)
+  @Delete('/my/:id')
+  @UseGuards(JwtAuthGuard)
+  async removeFromSaved(
+    @Req() request: IRequest,
+    @Param('id') id: string,
+  ): Promise<void> {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this.usersRepository.findOne(userID);
+    const room = await this.roomRepository.findOne(id);
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    await this.usersRepository
+      .createQueryBuilder()
+      .relation(User, 'savedRooms')
+      .of(user)
+      .remove(room);
   }
 }
