@@ -47,10 +47,8 @@ export class RoomController {
       user: { id: userID },
     } = request;
 
-    const user = await this.usersRepository.findOne(userID);
-
     const newRoom = await this.roomRepository.save(
-      this.roomRepository.create({ ...createRoomDto, user }),
+      this.roomRepository.create({ ...createRoomDto, userId: userID }),
     );
 
     await this.sessionRepository.save(
@@ -74,10 +72,10 @@ export class RoomController {
       user: { id: userID },
     } = request;
 
-    const room = await this.roomRepository
-      .createQueryBuilder('room')
-      .where('room.id = :roomID AND room.userId = :userID', { userID, roomID })
-      .getOne();
+    const room = await this.roomRepository.findOne({
+      id: Number(roomID),
+      userId: userID,
+    });
 
     if (room === undefined) {
       throw new NotFoundException();
@@ -98,10 +96,10 @@ export class RoomController {
       user: { id: userID },
     } = request;
 
-    const room = await this.roomRepository
-      .createQueryBuilder('room')
-      .where('room.id = :roomID AND room.userId = :userID', { userID, roomID })
-      .getOne();
+    const room = await this.roomRepository.findOne({
+      id: Number(roomID),
+      userId: userID,
+    });
 
     if (room === undefined) {
       throw new NotFoundException();
@@ -143,11 +141,7 @@ export class RoomController {
       .getOne();
 
     const savedRooms = user?.savedRooms ?? [];
-
-    const ownedRooms = await this.roomRepository
-      .createQueryBuilder('room')
-      .where('room.userId = :userId', { userId: userID })
-      .getMany();
+    const ownedRooms = await this.roomRepository.find({ userId: userID });
 
     const myRooms = [...ownedRooms, ...savedRooms];
 

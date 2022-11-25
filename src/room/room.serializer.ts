@@ -1,10 +1,12 @@
 import { Room } from './entities/room.entity';
+import { UserIDType } from '../interfaces/common.interface';
 
 export type SerializedRoom = {
   id: number;
   name: string;
   description: string | null;
   password: string | null;
+  userID: UserIDType;
 };
 
 export class RoomSerializer {
@@ -14,6 +16,7 @@ export class RoomSerializer {
       name: roomEntity.name,
       description: roomEntity.description,
       password: roomEntity.password,
+      userID: roomEntity.userId,
     };
   }
 
