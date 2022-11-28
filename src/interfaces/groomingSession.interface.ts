@@ -1,3 +1,5 @@
+import { UserIDType } from './common.interface';
+
 enum GroomingSessionUserMode {
   SPECTATOR = 'spectator',
   VOTER = 'voter',
@@ -14,9 +16,9 @@ type GroomingSessionUserData = {
   email: string;
 };
 
-type GroomingSessionUser = Record<string, GroomingSessionUserData>;
+type GroomingSessionUser = Record<UserIDType, GroomingSessionUserData>;
 
-type GroomingEstimation = Record<string, number | null>;
+type GroomingEstimation = Record<UserIDType, number | null>;
 
 export {
   GroomingSessionUser,

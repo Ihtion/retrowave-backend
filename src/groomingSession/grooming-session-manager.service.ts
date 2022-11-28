@@ -6,106 +6,126 @@ import { UserIDType } from '../interfaces/common.interface';
 import { OutgoingWSEvents } from '../webSocketEvents/wsEvents.interface';
 
 import {
+  SocketDetails,
   IGroomingSessionManager,
-  ConnectionData,
 } from './grooming-session.interface';
 
 import { GroomingSession } from './grooming-session.entity';
 
+type socketData = {
+  socket: Socket;
+  userID: UserIDType;
+};
+
+type SessionIDType = number;
+type SocketIDType = string;
+
 @Injectable()
 export class GroomingSessionManager implements IGroomingSessionManager {
-  private _socketsStorage = new Map<number, Socket[]>(); // sessionID: Socket
-  private _connectionsData = new Map<string, ConnectionData>(); // socketID: Data
+  private socketsForSession = new Map<SessionIDType, socketData[]>();
+  private socketsDetails = new Map<SocketIDType, SocketDetails>();
 
   addConnection(userID: UserIDType, sessionID: number, socket: Socket): void {
-    const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
+    const sessionSockets = this.socketsForSession.get(sessionID) ?? [];
 
-    this._socketsStorage.set(sessionID, [...sessionSockets, socket]);
+    this.socketsForSession.set(sessionID, [
+      ...sessionSockets,
+      { socket, userID },
+    ]);
 
-    this._connectionsData.set(socket.id, { userID, sessionID });
+    this.socketsDetails.set(socket.id, { userID, sessionID });
   }
 
   removeConnection(socketToRemove: Socket): void {
-    const sessionID = this._connectionsData.get(socketToRemove.id)?.sessionID;
+    const sessionID = this.socketsDetails.get(socketToRemove.id)?.sessionID;
 
     if (!sessionID) {
       return;
     }
 
-    const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
+    const sessionSockets = this.socketsForSession.get(sessionID) ?? [];
 
     const updatedSessionSockets = sessionSockets.filter(
-      (socket) => socket !== socketToRemove,
+      ({ socket }) => socket !== socketToRemove,
     );
 
     if (updatedSessionSockets.length === 0) {
-      this._socketsStorage.delete(sessionID);
+      this.socketsForSession.delete(sessionID);
     } else {
-      this._socketsStorage.set(sessionID, updatedSessionSockets);
+      this.socketsForSession.set(sessionID, updatedSessionSockets);
     }
 
-    this._connectionsData.delete(socketToRemove.id);
+    this.socketsDetails.delete(socketToRemove.id);
   }
 
-  getConnectionData(socket: Socket): ConnectionData {
-    return this._connectionsData.get(socket.id);
+  getUserIDConnectionsAmount(sessionID: number, userID: UserIDType): number {
+    const sessionSockets = this.socketsForSession.get(sessionID);
+
+    if (!sessionSockets) {
+      return 0;
+    }
+
+    return sessionSockets.filter((socketData) => socketData.userID === userID)
+      .length;
   }
 
-  emitUserJoinEvent(sessionID: number, connectionID: string, user: User): void {
-    const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
+  getSocketDetails(socket: Socket): SocketDetails {
+    return this.socketsDetails.get(socket.id);
+  }
 
-    sessionSockets.forEach((socket) =>
+  emitUserJoinEvent(sessionID: number, user: User): void {
+    const sessionSockets = this.socketsForSession.get(sessionID) ?? [];
+
+    sessionSockets.forEach(({ socket }) =>
       socket.emit(OutgoingWSEvents.USER_JOIN, {
-        connectionID,
         userEmail: user.email,
+        userID: user.id,
       }),
     );
   }
 
-  emitUserLeaveEvent(sessionID: number, connectionID: string): void {
-    const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
+  emitUserLeaveEvent(sessionID: number, userID: UserIDType): void {
+    const sessionSockets = this.socketsForSession.get(sessionID) ?? [];
 
-    sessionSockets.forEach((socket) =>
-      socket.emit(OutgoingWSEvents.USER_LEAVE, { connectionID }),
+    sessionSockets.forEach(({ socket }) =>
+      socket.emit(OutgoingWSEvents.USER_LEAVE, { userID }),
     );
   }
 
   emitVotingStartEvent(
     sessionID: number,
-    connectionID: string,
+    userID: UserIDType,
     votingComment: string | null,
   ): void {
-    const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
+    const sessionSockets = this.socketsForSession.get(sessionID) ?? [];
 
-    sessionSockets.forEach((socket) =>
+    sessionSockets.forEach(({ socket }) =>
       socket.emit(OutgoingWSEvents.VOTING_START, {
-        votingInitiator: connectionID,
+        votingInitiator: userID,
         votingComment,
       }),
     );
   }
 
   emitVotingFinishEvent(sessionID: number): void {
-    const sessionSockets = this._socketsStorage.get(sessionID) ?? [];
+    const sessionSockets = this.socketsForSession.get(sessionID) ?? [];
 
-    sessionSockets.forEach((socket) =>
+    sessionSockets.forEach(({ socket }) =>
       socket.emit(OutgoingWSEvents.VOTING_FINISH),
     );
   }
 
   emitSessionData(session: GroomingSession, socket: Socket): void {
-    const { state, users, votingInitiator, votingComment, estimations } =
+    const { votingState, users, votingInitiator, votingComment, estimations } =
       session;
 
-    const usersList = Object.entries(users).map(
-      ([connectionID, { email, mode }]) => {
-        return { connectionID, email, mode };
-      },
-    );
+    const usersList = Object.entries(users).map(([userID, { email, mode }]) => {
+      return { userID: Number(userID), email, mode };
+    });
 
     socket.emit(OutgoingWSEvents.SESSION_DATA, {
       usersList,
-      state,
+      votingState,
       votingInitiator,
       votingComment,
       estimations,
@@ -113,9 +133,9 @@ export class GroomingSessionManager implements IGroomingSessionManager {
   }
 
   emitEstimation(session: GroomingSession): void {
-    const sessionSockets = this._socketsStorage.get(session.id) ?? [];
+    const sessionSockets = this.socketsForSession.get(session.id) ?? [];
 
-    sessionSockets.forEach((socket) =>
+    sessionSockets.forEach(({ socket }) =>
       socket.emit(OutgoingWSEvents.ESTIMATION, {
         estimations: session.estimations,
       }),

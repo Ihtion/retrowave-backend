@@ -13,6 +13,7 @@ import {
 } from '../interfaces/groomingSession.interface';
 
 import { Room } from '../room/entities/room.entity';
+import { UserIDType } from '../interfaces/common.interface';
 
 @Entity('GroomingSession', {})
 export class GroomingSession {
@@ -23,14 +24,13 @@ export class GroomingSession {
   users: GroomingSessionUser;
 
   @Column('enum', { enum: GroomingState, default: GroomingState.INIT })
-  state: GroomingState;
+  votingState: GroomingState;
 
   @Column('varchar', { nullable: true, length: 100 })
   votingComment: string;
 
-  // Connection (socket) ID
   @Column('text', { nullable: true })
-  votingInitiator: string;
+  votingInitiator: UserIDType;
 
   @Column('json', { nullable: true })
   estimations: GroomingEstimation;
@@ -41,4 +41,7 @@ export class GroomingSession {
   })
   @JoinColumn()
   room: Room;
+
+  @Column({ nullable: false })
+  roomId: number;
 }
