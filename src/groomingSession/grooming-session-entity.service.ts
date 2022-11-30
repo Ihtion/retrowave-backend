@@ -111,4 +111,19 @@ export class GroomingSessionEntityService implements OnModuleInit {
 
     return this.sessionsRepository.save(session);
   }
+
+  checkAllVoted(session: GroomingSession): boolean {
+    const userIDs = Object.keys(session.users);
+
+    for (const userID of userIDs) {
+      if (
+        session.estimations[userID] === undefined ||
+        session.estimations[userID] === null
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 }

@@ -166,5 +166,14 @@ export class EventsGateway implements OnGatewayDisconnect {
       );
 
     this.groomingSessionManager.emitEstimation(updatedSession);
+
+    const allVoted =
+      this.groomingSessionEntityService.checkAllVoted(updatedSession);
+
+    if (allVoted) {
+      await this.groomingSessionEntityService.finishVoting(sessionID);
+
+      this.groomingSessionManager.emitVotingFinishEvent(sessionID);
+    }
   }
 }
