@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import {
@@ -14,6 +14,7 @@ import {
   NotFoundException,
   HttpCode,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 
 import { User } from '../user/entities/user.entity';
@@ -25,6 +26,7 @@ import { Room } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomSerializer, SerializedRoom } from './room.serializer';
+import { FindAllQueryDto } from './dto/find-all-query.dto';
 
 @Controller('rooms')
 export class RoomController {
@@ -121,10 +123,22 @@ export class RoomController {
   }
 
   @Get('/all')
-  async findAll(): Promise<SerializedRoom[]> {
-    const rooms = await this.roomRepository.find();
+  async findAll(@Query() query: FindAllQueryDto): Promise<{
+    rooms: SerializedRoom[];
+    total: number;
+  }> {
+    const [rooms, total] = await this.roomRepository.findAndCount({
+      where: {
+        name: Like(`%${query.search}%`),
+      },
+      take: query.limit,
+      skip: query.offset,
+    });
 
-    return RoomSerializer.serializeMany(rooms);
+    return {
+      rooms: RoomSerializer.serializeMany(rooms),
+      total,
+    };
   }
 
   @Get('/my')
