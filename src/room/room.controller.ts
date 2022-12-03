@@ -1,4 +1,4 @@
-import { Repository, Like } from 'typeorm';
+import { Repository, Like, Not } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import {
@@ -109,7 +109,7 @@ export class RoomController {
 
     if (updateRoomDto.name) {
       const roomWithTheSameName = await this.roomRepository.findOne({
-        where: { name: updateRoomDto.name },
+        where: { name: updateRoomDto.name, id: Not(roomID) },
       });
 
       if (roomWithTheSameName !== undefined) {
