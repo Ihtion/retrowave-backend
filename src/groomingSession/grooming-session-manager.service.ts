@@ -58,6 +58,33 @@ export class GroomingSessionManager implements IGroomingSessionManager {
     this.socketsDetails.delete(socketToRemove.id);
   }
 
+  removeConnectionsForUser(userID: UserIDType, sessionID: number): void {
+    const sessionSockets = this.socketsForSession.get(sessionID) ?? [];
+
+    const socketIDsToRemove = [];
+    const updatedSessionSockets = [];
+
+    sessionSockets.forEach((socketDetails) => {
+      if (socketDetails.userID !== userID) {
+        updatedSessionSockets.push(socketDetails);
+      } else {
+        socketIDsToRemove.push(socketDetails.socket.id);
+      }
+    });
+
+    this.emitUserLeaveEvent(sessionID, userID);
+
+    if (updatedSessionSockets.length === 0) {
+      this.socketsForSession.delete(sessionID);
+    } else {
+      this.socketsForSession.set(sessionID, updatedSessionSockets);
+    }
+
+    socketIDsToRemove.forEach((socketID) => {
+      this.socketsDetails.delete(socketID);
+    });
+  }
+
   getUserIDConnectionsAmount(sessionID: number, userID: UserIDType): number {
     const sessionSockets = this.socketsForSession.get(sessionID);
 

@@ -10,8 +10,9 @@ export type SocketDetails = {
 };
 
 export interface IGroomingSessionManager {
-  addConnection(userID: number, sessionID: number, socket: Socket): void;
+  addConnection(userID: UserIDType, sessionID: number, socket: Socket): void;
   removeConnection(socketToRemove: Socket): void;
+  removeConnectionsForUser(userID: UserIDType, sessionID: number): void;
 
   getSocketDetails(socket: Socket): SocketDetails;
   getUserIDConnectionsAmount(sessionID: number, userID: UserIDType): number;

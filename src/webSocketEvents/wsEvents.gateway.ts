@@ -78,25 +78,18 @@ export class EventsGateway implements OnGatewayDisconnect {
       return;
     }
 
-    this.groomingSessionManager.removeConnection(socket);
-
     const { sessionID, userID } = socketDetails;
 
-    const userIDConnectionsAmount =
-      this.groomingSessionManager.getUserIDConnectionsAmount(sessionID, userID);
+    this.groomingSessionManager.removeConnectionsForUser(userID, sessionID);
 
-    if (userIDConnectionsAmount === 0) {
-      this.groomingSessionManager.emitUserLeaveEvent(sessionID, userID);
+    const session = await this.groomingSessionRepository.findOne(sessionID);
 
-      const session = await this.groomingSessionRepository.findOne(sessionID);
+    await this.groomingSessionEntityService.removeUser(session, userID);
 
-      await this.groomingSessionEntityService.removeUser(session, userID);
+    if (Number(session.votingInitiator) === socketDetails.userID) {
+      await this.groomingSessionEntityService.finishVoting(sessionID);
 
-      if (session.votingInitiator === socketDetails.userID) {
-        await this.groomingSessionEntityService.finishVoting(sessionID);
-
-        this.groomingSessionManager.emitVotingFinishEvent(sessionID);
-      }
+      this.groomingSessionManager.emitVotingFinishEvent(sessionID);
     }
   }
 
