@@ -129,18 +129,30 @@ export class RoomController {
   async findByID(
     @Req() request: IRequest,
     @Param('id') roomID: string,
-  ): Promise<SerializedRoom> {
+  ): Promise<{ room: SerializedRoom; userHasAccess: boolean }> {
     const {
       user: { id: userID },
     } = request;
 
-    const room = await this.roomRepository.findOne(roomID);
+    const room = await this.roomRepository
+      .createQueryBuilder('room')
+      .where('room.id = :id', { id: roomID })
+      .leftJoinAndSelect('room.usersWithAccess', 'user')
+      .getOne();
 
     if (room === undefined) {
       throw new NotFoundException();
     }
 
-    return RoomSerializer.serialize(room, userID);
+    const usersWithAccess = room.usersWithAccess.map(({ id }) => id);
+
+    const userHasAccess =
+      room.userId === userID || usersWithAccess.includes(userID);
+
+    return {
+      room: RoomSerializer.serialize(room, userID),
+      userHasAccess,
+    };
   }
 
   @Get('/all')
@@ -253,7 +265,6 @@ export class RoomController {
       user: { id: userID },
     } = request;
 
-    const user = await this.usersRepository.findOne(userID);
     const room = await this.roomRepository.findOne(roomID);
 
     if (room === undefined) {
@@ -263,5 +274,13 @@ export class RoomController {
     if (room.password !== password) {
       throw new ForbiddenException('Password is incorrect');
     }
+
+    const user = await this.usersRepository.findOne(userID);
+
+    await this.roomRepository
+      .createQueryBuilder()
+      .relation(Room, 'usersWithAccess')
+      .of(room)
+      .add(user);
   }
 }

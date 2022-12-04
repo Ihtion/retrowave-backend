@@ -3,6 +3,8 @@ import { Length } from 'class-validator';
 import {
   Column,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -38,4 +40,8 @@ export class Room {
     nullable: true,
   })
   groomingSession: GroomingSession;
+
+  @ManyToMany(() => User)
+  @JoinTable()
+  usersWithAccess: User[];
 }
