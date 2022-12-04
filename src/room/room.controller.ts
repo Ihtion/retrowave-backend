@@ -121,7 +121,13 @@ export class RoomController {
       }
     }
 
-    await this.roomRepository.update(roomID, updateRoomDto);
+    const updatedRoom = { ...room, ...updateRoomDto };
+
+    if (updateRoomDto.password !== room.password) {
+      updatedRoom.usersWithAccess = [];
+    }
+
+    await this.roomRepository.save(updatedRoom);
   }
 
   @Get('/:id')
