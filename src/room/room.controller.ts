@@ -60,7 +60,7 @@ export class RoomController {
       }),
     );
 
-    return RoomSerializer.serialize(newRoom);
+    return RoomSerializer.serialize(newRoom, userID);
   }
 
   @Delete(':id')
@@ -123,10 +123,18 @@ export class RoomController {
   }
 
   @Get('/all')
-  async findAll(@Query() query: FindAllQueryDto): Promise<{
+  @UseGuards(JwtAuthGuard)
+  async findAll(
+    @Req() request: IRequest,
+    @Query() query: FindAllQueryDto,
+  ): Promise<{
     rooms: SerializedRoom[];
     total: number;
   }> {
+    const {
+      user: { id: userID },
+    } = request;
+
     const [rooms, total] = await this.roomRepository.findAndCount({
       where: {
         name: Like(`%${query.search}%`),
@@ -136,7 +144,7 @@ export class RoomController {
     });
 
     return {
-      rooms: RoomSerializer.serializeMany(rooms),
+      rooms: RoomSerializer.serializeMany(rooms, userID),
       total,
     };
   }
@@ -159,7 +167,7 @@ export class RoomController {
 
     const myRooms = [...ownedRooms, ...savedRooms];
 
-    return RoomSerializer.serializeMany(myRooms);
+    return RoomSerializer.serializeMany(myRooms, userID);
   }
 
   @HttpCode(204)
