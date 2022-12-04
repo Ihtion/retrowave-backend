@@ -15,6 +15,7 @@ import {
   HttpCode,
   BadRequestException,
   Query,
+  ForbiddenException,
 } from '@nestjs/common';
 
 import { User } from '../user/entities/user.entity';
@@ -27,6 +28,7 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomSerializer, SerializedRoom } from './room.serializer';
 import { FindAllQueryDto } from './dto/find-all-query.dto';
+import { CheckPasswordDto } from './dto/check-password.dto';
 
 @Controller('rooms')
 export class RoomController {
@@ -120,6 +122,25 @@ export class RoomController {
     }
 
     await this.roomRepository.update(roomID, updateRoomDto);
+  }
+
+  @Get('/:id')
+  @UseGuards(JwtAuthGuard)
+  async findByID(
+    @Req() request: IRequest,
+    @Param('id') roomID: string,
+  ): Promise<SerializedRoom> {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const room = await this.roomRepository.findOne(roomID);
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    return RoomSerializer.serialize(room, userID);
   }
 
   @Get('/all')
@@ -218,5 +239,29 @@ export class RoomController {
       .relation(User, 'savedRooms')
       .of(user)
       .remove(room);
+  }
+
+  @HttpCode(204)
+  @Post('/check-password/:id')
+  @UseGuards(JwtAuthGuard)
+  async checkPassword(
+    @Req() request: IRequest,
+    @Param('id') roomID: string,
+    @Body() { password }: CheckPasswordDto,
+  ): Promise<void> {
+    const {
+      user: { id: userID },
+    } = request;
+
+    const user = await this.usersRepository.findOne(userID);
+    const room = await this.roomRepository.findOne(roomID);
+
+    if (room === undefined) {
+      throw new NotFoundException();
+    }
+
+    if (room.password !== password) {
+      throw new ForbiddenException('Password is incorrect');
+    }
   }
 }
