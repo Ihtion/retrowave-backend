@@ -3,12 +3,15 @@ import { Length } from 'class-validator';
 import {
   Column,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { User } from '../../user/entities/user.entity';
+import { UserIDType } from '../../interfaces/common.interface';
 import { GroomingSession } from '../../groomingSession/grooming-session.entity';
 
 @Entity('Room', {})
@@ -18,6 +21,9 @@ export class Room {
 
   @ManyToOne(() => User, (user) => user.rooms, { nullable: false })
   user: User;
+
+  @Column({ nullable: false })
+  userId: UserIDType;
 
   @Column('varchar', { unique: true, nullable: false, length: 100 })
   @Length(1, 100)
@@ -34,4 +40,8 @@ export class Room {
     nullable: true,
   })
   groomingSession: GroomingSession;
+
+  @ManyToMany(() => User)
+  @JoinTable()
+  usersWithAccess: User[];
 }

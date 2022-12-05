@@ -50,23 +50,15 @@ export class EventsGateway implements OnGatewayDisconnect {
     const { userID, roomID } = data;
 
     const user = await this.usersRepository.findOne(userID);
-    const room = await this.roomsRepository.findOne(roomID);
+
     const groomingSession = await this.groomingSessionRepository.findOne({
-      room,
+      roomId: Number(roomID),
     });
 
-    if (groomingSession.users[socket.id]) {
-      this.groomingSessionManager.emitSessionData(groomingSession, socket);
-
-      return;
-    }
-
-    const updatedSession =
-      await this.groomingSessionEntityService.addConnection(
-        user,
-        groomingSession,
-        socket.id,
-      );
+    const updatedSession = await this.groomingSessionEntityService.addUser(
+      user,
+      groomingSession,
+    );
 
     this.groomingSessionManager.addConnection(
       Number(userID),
@@ -74,45 +66,30 @@ export class EventsGateway implements OnGatewayDisconnect {
       socket,
     );
 
-    this.groomingSessionManager.emitUserJoinEvent(
-      groomingSession.id,
-      socket.id,
-      user,
-    );
+    this.groomingSessionManager.emitUserJoinEvent(groomingSession.id, user);
 
     this.groomingSessionManager.emitSessionData(updatedSession, socket);
   }
 
   async handleDisconnect(@ConnectedSocket() socket: Socket): Promise<void> {
-    const connectionData =
-      this.groomingSessionManager.getConnectionData(socket);
+    const socketDetails = this.groomingSessionManager.getSocketDetails(socket);
 
-    this.groomingSessionManager.removeConnection(socket);
+    if (!socketDetails) {
+      return;
+    }
 
-    if (connectionData) {
-      this.groomingSessionManager.emitUserLeaveEvent(
-        connectionData.sessionID,
-        socket.id,
-      );
+    const { sessionID, userID } = socketDetails;
 
-      const session = await this.groomingSessionRepository.findOne(
-        connectionData.sessionID,
-      );
+    this.groomingSessionManager.removeConnectionsForUser(userID, sessionID);
 
-      await this.groomingSessionEntityService.removeConnection(
-        session,
-        socket.id,
-      );
+    const session = await this.groomingSessionRepository.findOne(sessionID);
 
-      if (session.votingInitiator === socket.id) {
-        await this.groomingSessionEntityService.finishVoting(
-          connectionData.sessionID,
-        );
+    await this.groomingSessionEntityService.removeUser(session, userID);
 
-        this.groomingSessionManager.emitVotingFinishEvent(
-          connectionData.sessionID,
-        );
-      }
+    if (Number(session.votingInitiator) === socketDetails.userID) {
+      await this.groomingSessionEntityService.finishVoting(sessionID);
+
+      this.groomingSessionManager.emitVotingFinishEvent(sessionID);
     }
   }
 
@@ -121,44 +98,44 @@ export class EventsGateway implements OnGatewayDisconnect {
     @ConnectedSocket() socket: Socket,
     @MessageBody() votingComment: string,
   ): Promise<void> {
-    const connectionData =
-      this.groomingSessionManager.getConnectionData(socket);
+    const socketDetails = this.groomingSessionManager.getSocketDetails(socket);
 
-    if (connectionData) {
-      const session = await this.groomingSessionRepository.findOne(
-        connectionData.sessionID,
+    if (!socketDetails) {
+      return;
+    }
+
+    const { sessionID, userID } = socketDetails;
+
+    const session = await this.groomingSessionRepository.findOne(sessionID);
+
+    if (session.votingState !== GroomingState.ACTIVE) {
+      await this.groomingSessionEntityService.startVoting(
+        sessionID,
+        userID,
+        votingComment ?? null,
       );
 
-      if (session.state !== GroomingState.ACTIVE) {
-        await this.groomingSessionEntityService.startVoting(
-          connectionData.sessionID,
-          socket.id,
-          votingComment ?? null,
-        );
-
-        this.groomingSessionManager.emitVotingStartEvent(
-          connectionData.sessionID,
-          socket.id,
-          votingComment ?? null,
-        );
-      }
+      this.groomingSessionManager.emitVotingStartEvent(
+        socketDetails.sessionID,
+        userID,
+        votingComment ?? null,
+      );
     }
   }
 
   @SubscribeMessage(IncomingWSEvents.VOTING_FINISH)
   async handleVotingFinish(@ConnectedSocket() socket: Socket): Promise<void> {
-    const connectionData =
-      this.groomingSessionManager.getConnectionData(socket);
+    const socketDetails = this.groomingSessionManager.getSocketDetails(socket);
 
-    if (connectionData) {
-      await this.groomingSessionEntityService.finishVoting(
-        connectionData.sessionID,
-      );
-
-      this.groomingSessionManager.emitVotingFinishEvent(
-        connectionData.sessionID,
-      );
+    if (!socketDetails) {
+      return;
     }
+
+    const { sessionID } = socketDetails;
+
+    await this.groomingSessionEntityService.finishVoting(sessionID);
+
+    this.groomingSessionManager.emitVotingFinishEvent(sessionID);
   }
 
   @SubscribeMessage(IncomingWSEvents.ESTIMATION)
@@ -166,18 +143,30 @@ export class EventsGateway implements OnGatewayDisconnect {
     @ConnectedSocket() socket: Socket,
     @MessageBody() estimation: number | null,
   ): Promise<void> {
-    const connectionData =
-      this.groomingSessionManager.getConnectionData(socket);
+    const socketDetails = this.groomingSessionManager.getSocketDetails(socket);
 
-    if (connectionData) {
-      const updatedSession =
-        await this.groomingSessionEntityService.setEstimation(
-          connectionData.sessionID,
-          socket.id,
-          estimation,
-        );
+    if (!socketDetails) {
+      return;
+    }
 
-      this.groomingSessionManager.emitEstimation(updatedSession);
+    const { sessionID, userID } = socketDetails;
+
+    const updatedSession =
+      await this.groomingSessionEntityService.setEstimation(
+        sessionID,
+        userID,
+        estimation,
+      );
+
+    this.groomingSessionManager.emitEstimation(updatedSession);
+
+    const allVoted =
+      this.groomingSessionEntityService.checkAllVoted(updatedSession);
+
+    if (allVoted) {
+      await this.groomingSessionEntityService.finishVoting(sessionID);
+
+      this.groomingSessionManager.emitVotingFinishEvent(sessionID);
     }
   }
 }

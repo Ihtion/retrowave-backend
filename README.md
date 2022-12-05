@@ -5,6 +5,9 @@
 * `yarn`
 * `docker`
 
+#### **Env variables**
+Create `.env` file. Required variables can be find in `.env-example` file
+
 #### **Launch project using docker-compose**
 ```
   $ cd docker
