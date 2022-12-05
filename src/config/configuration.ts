@@ -13,5 +13,6 @@ export const configuration = () => {
     },
     JWT_EXPIRATION: process.env.JWT_EXPIRATION,
     SECRET_KEY: process.env.SECRET_KEY,
+    GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
   };
 };
